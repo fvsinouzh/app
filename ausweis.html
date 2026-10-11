@@ -584,7 +584,7 @@ function zeigePruefen() {
   try { start = location.protocol !== 'file:' && location.protocol !== 'about:' && !window.FVA_LINK && sessionStorage.getItem('fvs-start') === '1'; } catch (e) {}
   var h = '<div class="seite">' + (start ? '<a class="zurueck" href="index.html">&lsaquo; Home</a>' : '') + '<div class="marke">' + (SIEGEL ? '<img src="' + SIEGEL + '" alt="">' : '') + '<div><b>Fachverein Sinologie</b><span>Chinese Studies Student Association</span></div></div>';
   h += '<h1>Ausweis prüfen<span class="en">Check membership card</span></h1>';
-  h += '<p class="klein">QR-Code des Mitgliederausweises vor die Kamera halten. Geprüft wird auf diesem Gerät, es werden keine Daten verschickt.<br>Hold the QR code of the membership card in front of the camera. Nothing is sent anywhere.</p>';
+  h += '<p class="klein">QR-Code des Mitgliederausweises vor die Kamera halten. Geprüft wird auf diesem Gerät, es werden keine Daten verschickt. Immer scannen: Ein vorgezeigter Bildschirm mit «Gültig» allein beweist nichts.<br>Hold the QR code of the membership card in front of the camera. Nothing is sent anywhere. Always scan: a screen showing «Valid» proves nothing by itself.</p>';
   h += '<button type="button" class="btn haupt voll" data-act="kamera" id="kamera-knopf">Kamera starten · Start camera</button>';
   h += '<div class="video-box" id="video-box"><video id="video" playsinline muted autoplay></video><div class="ziel"></div></div>';
   h += '<div class="oder"><label class="btn voll">Foto des Codes wählen · Choose a photo<input type="file" id="foto" accept="image/*" capture="environment" hidden></label>' +

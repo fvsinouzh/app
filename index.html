@@ -79,7 +79,13 @@ h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--text
   document.getElementById('abmelden').addEventListener('click', function (e) {
     e.preventDefault();
     try { localStorage.removeItem('fvs-vorlagen-schluessel'); sessionStorage.removeItem('fvs-vorlagen-schluessel'); } catch (x) {}
-    this.textContent = 'Abgemeldet. Beim nächsten Öffnen der Vorlagen wird das Passwort verlangt.';
+    // Befund 8 der Prüfung: auf Wunsch auch alle Eingaben in den Vorlagen von diesem Gerät löschen
+    var auch = confirm('Abgemeldet.\n\nAuch alle Eingaben in den Vorlagen auf diesem Gerät löschen (z. B. Auslagen mit IBAN und Fotos)?\n\nOK = löschen\nAbbrechen = Eingaben behalten');
+    if (auch) {
+      try { Object.keys(localStorage).forEach(function (k) { if (/^fvs-/.test(k) && !/^fvs-mein-ausweis$/.test(k)) localStorage.removeItem(k); }); } catch (x) {}
+      try { indexedDB.deleteDatabase('fvs-vorlagen'); } catch (x) {}
+    }
+    this.textContent = auch ? 'Abgemeldet, Eingaben gelöscht.' : 'Abgemeldet. Beim nächsten Öffnen der Vorlagen wird das Passwort verlangt.';
   });
   // Offline-Fähigkeit (nur über https)
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {});
