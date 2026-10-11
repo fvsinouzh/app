@@ -658,8 +658,18 @@ document.addEventListener('change', function (e) {
 });
 document.addEventListener('visibilitychange', function () { if (document.hidden) kameraAus(); });
 
+// Der eigene Ausweis wird auf dem Handy gemerkt. Wer die Seite ohne #-Teil öffnet (z. B. über ein Symbol auf dem
+// Startbildschirm, das nach «Anderen Ausweis prüfen» angelegt wurde), sieht trotzdem den eigenen Ausweis.
+// Ausnahme: Der Vorstand kommt über die Startseite der Web-App und will Ausweise prüfen.
+var MEIN = 'fvs-mein-ausweis';
 function start() {
-  var token = window.FVA_TOKEN || tokenAus(location.hash);
+  var token = window.FVA_TOKEN || tokenAus(location.hash), web = !window.FVA_TOKEN && /^https?:$/.test(location.protocol);
+  if (token && web) { try { localStorage.setItem(MEIN, location.href); } catch (e) {} }
+  if (!token && web) {
+    var vonStart = false, gemerkt = null;
+    try { vonStart = sessionStorage.getItem('fvs-start') === '1'; gemerkt = localStorage.getItem(MEIN); } catch (e) {}
+    if (!vonStart && gemerkt && tokenAus(gemerkt)) { history.replaceState(null, '', gemerkt); token = tokenAus(gemerkt); }
+  }
   if (token) zeigeAusweis(token, window.FVA_LINK || location.href);
   else zeigePruefen();
 }
