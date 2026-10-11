@@ -81,11 +81,17 @@ h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--text
     try { localStorage.removeItem('fvs-vorlagen-schluessel'); sessionStorage.removeItem('fvs-vorlagen-schluessel'); } catch (x) {}
     // Befund 8 der Prüfung: auf Wunsch auch alle Eingaben in den Vorlagen von diesem Gerät löschen
     var auch = confirm('Abgemeldet.\n\nAuch alle Eingaben in den Vorlagen auf diesem Gerät löschen (z. B. Auslagen mit IBAN und Fotos)?\n\nOK = löschen\nAbbrechen = Eingaben behalten');
-    if (auch) {
-      try { Object.keys(localStorage).forEach(function (k) { if (/^fvs-/.test(k) && !/^fvs-mein-ausweis$/.test(k)) localStorage.removeItem(k); }); } catch (x) {}
-      try { indexedDB.deleteDatabase('fvs-vorlagen'); } catch (x) {}
-    }
-    this.textContent = auch ? 'Abgemeldet, Eingaben gelöscht.' : 'Abgemeldet. Beim nächsten Öffnen der Vorlagen wird das Passwort verlangt.';
+    var knopf = this;
+    if (!auch) { knopf.textContent = 'Abgemeldet. Beim nächsten Öffnen der Vorlagen wird das Passwort verlangt.'; return; }
+    try { Object.keys(localStorage).forEach(function (k) { if (/^fvs-/.test(k) && !/^fvs-mein-ausweis$/.test(k)) localStorage.removeItem(k); }); } catch (x) {}
+    // Befund 3d: erst melden, wenn wirklich gelöscht ist. Ein offener Vorlagen-Tab blockiert das Löschen.
+    knopf.textContent = 'Eingaben werden gelöscht …';
+    try {
+      var r = indexedDB.deleteDatabase('fvs-vorlagen');
+      r.onsuccess = function () { knopf.textContent = 'Abgemeldet, Eingaben gelöscht.'; };
+      r.onerror = function () { knopf.textContent = 'Abgemeldet. Die Eingaben konnten nicht gelöscht werden: Browser neu starten und nochmals abmelden.'; };
+      r.onblocked = function () { knopf.textContent = 'Abgemeldet. Zum Löschen der Eingaben alle anderen Tabs mit Vorlagen schliessen; das Löschen folgt dann von selbst.'; };
+    } catch (x) { knopf.textContent = 'Abgemeldet. Die Eingaben konnten nicht gelöscht werden.'; }
   });
   // Offline-Fähigkeit (nur über https)
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {});
