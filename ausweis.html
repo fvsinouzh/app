@@ -488,11 +488,11 @@ var FVQR = (function () {
 var STUFE = { a: ['Aktivmitglied', 'Active member'], e: ['Ehrenmitglied', 'Honorary member'], l: ['Alumni', 'Alumni'] };
 var app = document.getElementById('app'), SIEGEL = window.FVS_SIEGEL || '';
 var strom = null, scanTimer = null, uhr = null, kameraLief = false;
-var EIGEN = null;   // der eigene Ausweis dieser Seite, damit man nach dem Prüfen anderer Ausweise zurückkommt
 // Dieselbe Datei läuft als ausweis.html (eigener Ausweis) und als pruefen.html (Ausweise prüfen, merkt sich nichts).
 // Der QR-Code auf dem Ausweis zeigt auf pruefen.html: Wer ihn mit der Kamera-App scannt, landet in der Prüfansicht.
 var WEB = /^https?:$/.test(location.protocol);
-var PRUEFSEITE = WEB && !window.FVA_TOKEN && !window.FVA_LINK && /(^|\/)pruefen\.html$/.test(location.pathname);
+// Strikte Trennung: ausweis.html zeigt nur den eigenen Ausweis, geprüft wird nur auf pruefen.html (auch als Datei am PC).
+var PRUEFSEITE = !window.FVA_TOKEN && !window.FVA_LINK && /(^|\/)pruefen\.html$/.test(location.pathname);
 function pruefAdresse(link) { return String(link || '').replace(/ausweis\.html(?=[#?]|$)/, 'pruefen.html'); }
 // Neu prüfen, sobald ein neuer Tag beginnt (Seite bleibt über das Ablaufdatum hinaus offen)
 var TAG = null, NEU_ZEIGEN = null;
@@ -577,12 +577,12 @@ function datenschutzLink() { return online() && !window.FVA_LINK ? '<p class="kl
 
 /* Ansicht 1: eigener Ausweis (Link mit #) */
 function zeigeAusweis(token, link) {
-  EIGEN = { token: token, link: link, fva: !!window.FVA_TOKEN }; beiNeuemTag(function () { zeigeAusweis(token, link); });
+  beiNeuemTag(function () { zeigeAusweis(token, link); });
   app.innerHTML = '<div class="seite"><p class="klein">Ausweis wird geprüft … · Checking …</p></div>';
   pruefen(token).then(function (r) {
     var h = '<div class="seite">' + karte(r, link);
     if (r.status === 'gueltig') h += '<div class="tipp">Tipp: Seite zum Startbildschirm hinzufügen (Teilen → «Zum Home-Bildschirm»). Am Eingang den QR-Code zeigen. Bei Partnern mit Rabatt die geöffnete Seite zeigen, nicht ein Bildschirmfoto: Sie lesen das heutige Datum.<br><span class="en">Tip: add this page to your home screen. Show the QR code at the entrance. At partners with a discount, show this page, not a screenshot: they check today\'s date.</span></div>';
-    h += '<div class="aktionen"><button type="button" class="btn" data-act="pruefmodus">Anderen Ausweis prüfen · Check another card</button></div>' + datenschutzLink() + '</div>';
+    h += datenschutzLink() + '</div>';   // keine Prüffunktion: geprüft wird nur auf pruefen.html
     app.innerHTML = h; uhrStarten();
   });
 }
@@ -600,7 +600,7 @@ function zeigePruefen() {
   h += '<div class="video-box" id="video-box"><video id="video" playsinline muted autoplay></video><div class="ziel"></div></div>';
   h += '<div class="oder"><label class="btn voll">Foto des Codes wählen · Choose a photo<input type="file" id="foto" accept="image/*" capture="environment" hidden></label>' +
     '<input type="text" id="link" inputmode="url" placeholder="Link einfügen · Paste link" aria-label="Link einfügen"><button type="button" class="btn voll" data-act="linkPruefen">Link prüfen · Check link</button></div>' +
-    (EIGEN ? '<div class="aktionen"><button type="button" class="btn voll" data-act="meinAusweis">Zurück zu meinem Ausweis · Back to my card</button></div>' : PRUEFSEITE && gemerkterAusweis() ? '<div class="aktionen"><a class="btn voll" href="ausweis.html">Zu meinem Ausweis · My card</a></div>' : '');
+''; 
   h += '<div class="meldung" id="meldung" hidden></div>' + datenschutzLink() + '</div>';
   app.innerHTML = h;
 }
@@ -654,13 +654,6 @@ document.addEventListener('click', function (e) {
   var act = a.dataset.act;
   if (act === 'kamera') kameraAn();
   else if (act === 'kameraAus') kameraAus();
-  else if (act === 'pruefmodus' && WEB && !window.FVA_TOKEN) { location.href = 'pruefen.html'; }
-  else if (act === 'pruefmodus') { clearInterval(uhr); if (window.FVA_TOKEN) window.FVA_TOKEN = ''; else history.pushState(null, '', location.pathname + location.search); zeigePruefen(); }
-  else if (act === 'meinAusweis' && EIGEN) {
-    kameraAus(); var d0 = document.querySelector('.ergebnis'); if (d0) d0.remove();
-    if (EIGEN.fva) window.FVA_TOKEN = EIGEN.token; else history.pushState(null, '', EIGEN.link);
-    start(); window.scrollTo(0, 0);
-  }
   else if (act === 'linkPruefen') { var t = tokenAus(document.getElementById('link').value); if (t) ergebnis(t); else melden('Bitte zuerst einen Link einfügen. · Please paste a link first.'); }
   else if (act === 'weiter') { var d = document.querySelector('.ergebnis'); if (d) d.remove(); clearInterval(uhr); NEU_ZEIGEN = null; if (kameraLief) kameraAn(); }
 });
@@ -674,15 +667,14 @@ document.addEventListener('change', function (e) {
 document.addEventListener('visibilitychange', function () { if (document.hidden) kameraAus(); });
 
 // Der eigene Ausweis wird auf dem Handy gemerkt. Wer die Seite ohne #-Teil öffnet (z. B. über ein Symbol auf dem
-// Startbildschirm, das nach «Anderen Ausweis prüfen» angelegt wurde), sieht trotzdem den eigenen Ausweis.
-// Ausnahme: Der Vorstand kommt über die Startseite der Web-App und will Ausweise prüfen.
+// Startbildschirm), sieht trotzdem den eigenen Ausweis. Ohne gemerkten Ausweis: nur ein Hinweis, keine Prüffunktion.
 var MEIN = 'fvs-mein-ausweis';
 function gemerkterAusweis() { try { var g = localStorage.getItem(MEIN); return g && tokenAus(g) ? g : null; } catch (e) { return null; } }
 function keinAusweis() {
   app.innerHTML = '<div class="seite"><div class="marke">' + (SIEGEL ? '<img src="' + SIEGEL + '" alt="">' : '') + '<div><b>Fachverein Sinologie</b><span>Chinese Studies Student Association</span></div></div>' +
     '<h1>Mitgliederausweis<span class="en">Membership card</span></h1>' +
     '<p>Auf diesem Gerät ist noch kein Ausweis geöffnet. Den Link aus der E-Mail des Fachvereins öffnen.<br><span class="en">No membership card has been opened on this device yet. Open the link from the association\'s email.</span></p>' +
-    '<div class="aktionen"><a class="btn voll" href="pruefen.html">Ausweis prüfen · Check a card</a></div>' + datenschutzLink() + '</div>';
+    datenschutzLink() + '</div>';
 }
 function start() {
   var token = window.FVA_TOKEN || tokenAus(location.hash), web = !window.FVA_TOKEN && WEB;
@@ -696,15 +688,12 @@ function start() {
   }
   if (token && web) { try { localStorage.setItem(MEIN, location.href); } catch (e) {} }
   if (!token && web) {
-    var vonStart = false;
-    try { vonStart = sessionStorage.getItem('fvs-start') === '1'; } catch (e) {}
-    if (vonStart) { location.replace('pruefen.html'); return; }   // Vorstand von der Startseite: Ausweise prüfen
     var gemerkt = gemerkterAusweis();
     if (gemerkt) { history.replaceState(null, '', gemerkt); token = tokenAus(gemerkt); }
     else { keinAusweis(); return; }
   }
   if (token) zeigeAusweis(token, window.FVA_LINK || location.href);
-  else zeigePruefen();   // Datei am PC (Webcam) oder Vorschau in der Mitgliederverwaltung
+  else keinAusweis();
 }
 window.addEventListener('hashchange', function () { var d = document.querySelector('.ergebnis'); if (d) d.remove(); kameraAus(); start(); });
 // Offline-Fähigkeit, wenn die Seite in der Web-App des Vereins liegt (nur über https). Wer den eigenen Ausweis öffnet
