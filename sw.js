@@ -2,9 +2,9 @@
    Seiten (HTML): zuerst aus dem Netz, damit eine ersetzte Datei sofort gilt; ohne Netz aus dem Speicher.
    Übrige Dateien: zuerst aus dem Speicher, im Hintergrund nachladen.
    «sw.js?nur=ausweis» (Mitglied öffnet den eigenen Ausweis): nur die Ausweis-Seite vorab speichern, nicht die ganze Web-App. */
-var V = 'fvs-158c7c49066f', DATEIEN = ["./", "index.html", "datenschutz.html", "vorlagen.html", "manifest.webmanifest", "assets/icon-180.png", "assets/icon-192.png", "assets/icon-512.png", "ausweis.html"];
+var V = 'fvs-38d5bce6d723', DATEIEN = ["./", "index.html", "datenschutz.html", "vorlagen.html", "manifest.webmanifest", "assets/icon-180.png", "assets/icon-192.png", "assets/icon-512.png", "ausweis.html", "pruefen.html"];
 var NUR_AUSWEIS = new URL(self.location.href).searchParams.get('nur') === 'ausweis';
-var VORAB = NUR_AUSWEIS ? ['ausweis.html', 'datenschutz.html'] : DATEIEN;
+var VORAB = NUR_AUSWEIS ? ['ausweis.html', 'pruefen.html', 'datenschutz.html'] : DATEIEN;
 self.addEventListener('install', function (e) {
   // Jede Datei einzeln: Fehlt eine oder fällt sie beim Laden aus (schlechter Empfang), kommt sie beim nächsten Aufruf in den Speicher
   e.waitUntil(caches.open(V).then(function (c) { return Promise.all(VORAB.map(function (d) { return c.add(d).catch(function () {}); })); }).then(function () { return self.skipWaiting(); }));
