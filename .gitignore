@@ -1,0 +1,27 @@
+# Fachverein Sinologie: Web-App fvsinouzh.github.io/app
+# Zulassungsliste: Alles ist ausgeschlossen, ausser den unten erlaubten Dateien.
+# Neue Datei für die Web-App? Hier mit «!» eintragen.
+# Nie ins Repository: Personendaten, CSV, Excel, Journal, Sicherungen,
+# Quellcode mit Testdaten, unverschlüsselte Vorlagen.
+
+*
+
+!.gitignore
+!index.html
+!ausweis.html
+!pruefen.html
+!datenschutz.html
+!vorlagen.html
+!sw.js
+!manifest.webmanifest
+
+!assets/
+!assets/*.png
+
+# Zur Sicherheit, auch falls oben einmal zu viel erlaubt wird
+*.csv
+*.xlsx
+*.xls
+*.json
+*.pdf
+*.zip
